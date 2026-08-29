@@ -1,0 +1,3 @@
+date,description,amount,type,vat_label
+2026-01-05,Office supplies,-120.00,expense,standard
+2026-01-06,Bank interest,25.00,income,exempt
