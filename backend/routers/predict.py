@@ -15,7 +15,10 @@ def predict_single(request: TransactionRequest):
 @router.post("/predict/batch", response_model=BatchPredictionResponse)
 def predict_batch(request: BatchTransactionRequest):
     try:
-        results = predictor_service.predict_batch(request.transactions)
+        results = []
+        for txn in request.transactions:
+            result = predictor_service.predict_single(txn.get("description", "") if isinstance(txn, dict) else txn.description)
+            results.append(result)
         return {"results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
