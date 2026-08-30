@@ -15,3 +15,5 @@ tqdm
 matplotlib
 seaborn
 ipykernel
+joblib
+requests

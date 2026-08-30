@@ -1,18 +1,29 @@
 from fastapi import APIRouter, HTTPException
-from backend.models.schemas import TransactionRequest, BatchTransactionRequest, PredictionResponse, BatchPredictionResponse
-from backend.models.predictor import predictor_service
+from ..models.schemas import TransactionRequest, BatchTransactionRequest, PredictionResponse, BatchPredictionResponse
+from ..models.predictor import predictor_service
 
-router = APIRouter(prefix="/api/v1", tags=["VAT Prediction"])
+router = APIRouter()
 
 @router.post("/predict", response_model=PredictionResponse)
-def predict_vat(payload: TransactionRequest):
-    if not payload.description.strip():
-        raise HTTPException(status_code=400, detail="Description cannot be empty.")
-    return predictor_service.predict_single(payload.description)
+def predict_single(request: TransactionRequest):
+    try:
+        result = predictor_service.predict_single(request.description)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/predict/batch", response_model=BatchPredictionResponse)
-def predict_vat_batch(payload: BatchTransactionRequest):
-    if not payload.transactions:
-        raise HTTPException(status_code=400, detail="Transaction list cannot be empty.")
-    results = predictor_service.predict_batch(payload.transactions)
-    return {"results": results}
+def predict_batch(request: BatchTransactionRequest):
+    try:
+        results = predictor_service.predict_batch(request.transactions)
+        return {"results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/health")
+def health():
+    return {
+        "status": "healthy",
+        "model_loaded": True,
+        "active_model": "XGBoost + TF-IDF"
+    }
