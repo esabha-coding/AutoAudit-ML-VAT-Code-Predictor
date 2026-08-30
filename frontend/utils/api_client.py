@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import json
 
 BASE_URL = st.secrets.get("BACKEND_URL", "https://autoaudit-ml-vat-code-predictor.onrender.com")
 
@@ -24,10 +25,23 @@ def predict_transaction(description: str, amount: float = None):
 def predict_batch(file):
     """Call batch prediction endpoint"""
     try:
-        files = {"file": file}
+        # Read CSV and convert to list of dicts
+        import pandas as pd
+        df = pd.read_csv(file)
+        
+        # Prepare transactions list
+        transactions = []
+        for _, row in df.iterrows():
+            transactions.append({
+                "description": row.get("description", ""),
+                "amount": row.get("amount", None)
+            })
+        
+        payload = {"transactions": transactions}
+        
         response = requests.post(
             f"{BASE_URL}/api/v1/predict/batch",
-            files=files,
+            json=payload,
             timeout=30
         )
         response.raise_for_status()
