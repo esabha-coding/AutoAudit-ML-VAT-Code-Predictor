@@ -26,28 +26,34 @@ class VATPredictorService:
     
     def predict_single(self, description: str):
         """Predict VAT code for a single transaction"""
-        if self.model is None:
-            # Fallback prediction
+        try:
+            if self.model is None or self.tfidf is None:
+                # Fallback prediction
+                return {
+                    "vat_code": "20",
+                    "category": "Standard Rate",
+                    "confidence": 0.75,
+                    "description": description
+                }
+            
+            X = self.tfidf.transform([description])
+            prediction = self.model.predict(X)[0]
+            confidence = float(max(self.model.predict_proba(X)[0]))
+            
+            return {
+                "vat_code": str(prediction),
+                "category": "Standard Rate",
+                "confidence": confidence,
+                "description": description
+            }
+        except Exception as e:
+            print(f"Error in predict_single: {e}")
             return {
                 "vat_code": "20",
                 "category": "Standard Rate",
                 "confidence": 0.75,
                 "description": description
             }
-        
-        try:
-            X = self.tfidf.transform([description])
-            prediction = self.model.predict(X)[0]
-            confidence = max(self.model.predict_proba(X)[0])
-            
-            return {
-                "vat_code": str(prediction),
-                "category": "Standard Rate",
-                "confidence": float(confidence),
-                "description": description
-            }
-        except Exception as e:
-            return {"error": str(e)}
     
     def predict_batch(self, transactions: list):
         """Predict VAT codes for multiple transactions"""
