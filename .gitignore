@@ -2,3 +2,12 @@
 *.pyc
 .venv/
 .streamlit/
+
+.venv/
+
+
+__pycache__/
+
+
+*.pyc
+
