@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import predict
 
-app = FastAPI(
-    title="AutoAudit-ML VAT Code Predictor",
-    description="HMRC VAT classification for UK bank transactions",
-    version="1.0.0"
-)
+try:
+    from backend.routers import predict
+except ModuleNotFoundError:
+    from routers import predict
+
+app = FastAPI(title="AutoAudit-ML VAT Code Predictor", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,9 +18,11 @@ app.add_middleware(
 
 app.include_router(predict.router, prefix="/api/v1", tags=["VAT Prediction"])
 
+
 @app.get("/")
 def root():
     return {"message": "AutoAudit-ML VAT Predictor API", "docs": "/docs"}
+
 
 @app.get("/health")
 def health():

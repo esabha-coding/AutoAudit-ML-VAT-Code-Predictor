@@ -1,4 +1,11 @@
+import os
+import sys
+
 import streamlit as st
+
+if __package__ is None or __package__ == "":
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from utils.api_client import predict_transaction, predict_batch
 
 st.set_page_config(
@@ -21,12 +28,13 @@ if page == "Single Transaction":
         placeholder="e.g., TESCO STORES 3421 LONDON"
     )
     
-    amount = st.number_input("Amount (optional):", value=None, step=0.01)
+    amount = st.number_input("Amount (optional):", min_value=0.0, value=0.0, step=0.01)
+    amount_value = None if amount == 0.0 else amount
     
     if st.button("Predict VAT Category"):
         if transaction_desc:
             with st.spinner("Analyzing transaction..."):
-                result = predict_transaction(transaction_desc, amount)
+                result = predict_transaction(transaction_desc, amount_value)
                 if result:
                     st.success("✅ Prediction Complete")
                     col1, col2, col3 = st.columns(3)

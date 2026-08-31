@@ -1,66 +1,71 @@
 import os
-import joblib
+import re
 
-ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "../../model/artifacts")
+import joblib
+import numpy as np
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ARTIFACTS_DIR = os.path.join(BASE_DIR, "model", "artifacts")
+
 
 class VATPredictorService:
     def __init__(self):
-        self.tfidf = None
-        self.model = None
-        self.load_artifacts()
-    
-    def load_artifacts(self):
-        """Load model artifacts if they exist"""
         try:
-            tfidf_path = os.path.join(ARTIFACTS_DIR, "tfidf_vectorizer.joblib")
-            model_path = os.path.join(ARTIFACTS_DIR, "xgboost_model.joblib")
-            
-            if os.path.exists(tfidf_path) and os.path.exists(model_path):
-                self.tfidf = joblib.load(tfidf_path)
-                self.model = joblib.load(model_path)
-                print("✅ Model artifacts loaded successfully")
-            else:
-                print("⚠️ Model artifacts not found - using fallback predictions")
+            self.tfidf = joblib.load(os.path.join(ARTIFACTS_DIR, "tfidf_vectorizer.joblib"))
+            self.model = joblib.load(os.path.join(ARTIFACTS_DIR, "xgboost_model.joblib"))
+            self.label_encoder = joblib.load(os.path.join(ARTIFACTS_DIR, "label_encoder.joblib"))
+            self.classes = self.label_encoder.classes_
+            self.loaded = True
         except Exception as e:
-            print(f"⚠️ Error loading artifacts: {e}")
-    
-    def predict_single(self, description: str):
-        """Predict VAT code for a single transaction"""
-        try:
-            if self.model is None or self.tfidf is None:
-                # Fallback prediction
-                return {
-                    "vat_code": "20",
-                    "category": "Standard Rate",
-                    "confidence": 0.75,
-                    "description": description
-                }
-            
-            X = self.tfidf.transform([description])
-            prediction = self.model.predict(X)[0]
-            confidence = float(max(self.model.predict_proba(X)[0]))
-            
-            return {
-                "vat_code": str(prediction),
-                "category": "Standard Rate",
-                "confidence": confidence,
-                "description": description
-            }
-        except Exception as e:
-            print(f"Error in predict_single: {e}")
-            return {
-                "vat_code": "20",
-                "category": "Standard Rate",
-                "confidence": 0.75,
-                "description": description
-            }
-    
-    def predict_batch(self, transactions: list):
-        """Predict VAT codes for multiple transactions"""
+            print(f"Model loading failed: {e}")
+            self.loaded = False
+
+    def _clean_text(self, text: str) -> str:
+        text = str(text).lower()
+        text = re.sub(r"[^a-z0-9\s]", " ", text)
+        return re.sub(r"\s+", " ", text).strip()
+
+    def predict_single(self, description: str) -> dict:
+        if not self.loaded:
+            raise ValueError("Model artifacts are not loaded. Check the model files in model/artifacts.")
+
+        cleaned = self._clean_text(description)
+        vectorized = self.tfidf.transform([cleaned])
+        probs = self.model.predict_proba(vectorized)[0]
+        top_idx = int(np.argmax(probs))
+        predicted_class = str(self.classes[top_idx])
+        confidence = float(probs[top_idx])
+        prob_dict = {str(cls): float(prob) for cls, prob in zip(self.classes, probs)}
+        return {
+            "description": description,
+            "predicted_vat_code": predicted_class,
+            "confidence": round(confidence, 4),
+            "probabilities": prob_dict,
+            "explanation": f"Classified as '{predicted_class}' with {confidence:.1%} confidence based on merchant transaction patterns.",
+        }
+
+    def predict_batch(self, descriptions: list) -> list:
+        if not self.loaded:
+            raise ValueError("Model artifacts are not loaded. Check the model files in model/artifacts.")
+
+        cleaned_list = [self._clean_text(desc) for desc in descriptions]
+        vectorized = self.tfidf.transform(cleaned_list)
+        probs_matrix = self.model.predict_proba(vectorized)
+        top_indices = np.argmax(probs_matrix, axis=1)
         results = []
-        for txn in transactions:
-            result = self.predict_single(txn.get("description", ""))
-            results.append(result)
+        for i, desc in enumerate(descriptions):
+            idx = top_indices[i]
+            predicted_class = str(self.classes[idx])
+            confidence = float(probs_matrix[i, idx])
+            prob_dict = {str(cls): float(prob) for cls, prob in zip(self.classes, probs_matrix[i])}
+            results.append({
+                "description": desc,
+                "predicted_vat_code": predicted_class,
+                "confidence": round(confidence, 4),
+                "probabilities": prob_dict,
+                "explanation": f"Classified as '{predicted_class}' with {confidence:.1%} confidence.",
+            })
         return results
+
 
 predictor_service = VATPredictorService()
