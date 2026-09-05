@@ -1,255 +1,256 @@
-# 🇬🇧 AutoAudit-ML: MTD-Ready VAT Code Predictor
+# AutoAudit-ML VAT Code Predictor
 
-AutoAudit-ML is an automated Making Tax Digital (MTD) compliance engine that classifies UK bank statement transactions into HMRC VAT categories using Machine Learning.
+AutoAudit-ML is a machine-learning application that classifies UK bank transaction descriptions into five VAT treatment categories. It combines a Streamlit dashboard for interactive use with a FastAPI service for programmatic predictions.
 
-It provides both a **FastAPI REST API** for high-throughput batch classification and an interactive **Streamlit Executive Dashboard** featuring multi-statement aggregation, date-wise analytics, and automated tax reporting.
+## Live Demo
 
----
+[Open the Streamlit dashboard](https://autoaudit-ml-vat-predictor.streamlit.app/)
 
-## 🔑 Key Features
+The dashboard is publicly accessible and supports:
 
-* **ML-Powered VAT Categorization:** Classifies transaction descriptions into standard, zero-rated, reduced, exempt, or outside-scope VAT codes with high accuracy.
-* **Vectorized Batch Processing:** Utilizes matrix vectorization to process 10,000+ transaction lines in under 2 seconds.
-* **Multi-CSV Statement Aggregation:** Upload and consolidate multiple bank statement files simultaneously into a single audit dataset.
-* **Date-Wise & Distribution Analytics:** Interactive Plotly visual displays highlighting tax distribution ratios and volume trends over time.
-* **FastAPI Backend Architecture:** Pydantic schema-validated REST endpoints preloaded with ML pipeline artifacts for real-time inference.
+- Single transaction VAT classification
+- One CSV bank statement upload at a time
+- Confidence scores and probability breakdowns
+- VAT distribution and confidence charts
+- Downloadable prediction results
+- HMRC VAT category reference information
 
----
+## VAT Categories
 
-## 🛠️ Technology Stack
+| Category | Rate | Examples |
+| --- | ---: | --- |
+| Standard Rate | 20% | Electronics, software, restaurants, mobile contracts |
+| Reduced Rate | 5% | Domestic energy and selected utilities |
+| Zero Rated | 0% | Groceries, books, and public transport |
+| Exempt | N/A | Bank charges, insurance, and postage |
+| Outside Scope | N/A | HMRC payments, payroll, and internal transfers |
 
-* **Machine Learning:** XGBoost, Scikit-learn (TF-IDF Vectorizer), Pandas, NumPy, Joblib
-* **Backend API:** FastAPI, Uvicorn, Pydantic V2
-* **Frontend Dashboard:** Streamlit, Plotly Express
-* **PDF Statement Parsing:** `pdfplumber`
+## How It Works
 
----
+The model cleans transaction text, transforms it with a TF-IDF vectorizer, and uses an XGBoost classifier to predict the most likely VAT category. The application also returns the model confidence and probability for every category.
 
-## 📁 Repository Structure
+The saved model artifacts are stored in `model/artifacts/`:
+
+- `tfidf_vectorizer.joblib`
+- `xgboost_model.joblib`
+- `label_encoder.joblib`
+
+## Technology Stack
+
+- Python 3.11
+- Streamlit and Plotly for the dashboard
+- FastAPI, Uvicorn, and Pydantic for the REST API
+- Scikit-learn TF-IDF vectorization
+- XGBoost classification
+- Pandas and NumPy for data processing
+- Joblib for model serialization
+
+## Repository Structure
 
 ```text
 AutoAudit-ML/
-├── backend/                  # FastAPI Application
-│   ├── models/               # Pydantic schemas & vector predictor service
-│   ├── routers/              # API endpoints (/predict, /predict/batch)
-│   └── main.py               # API entry point & CORS configuration
-├── frontend/                 # Streamlit UI
-│   ├── utils/                # API client HTTP wrappers
-│   └── app.py                # Dashboard & analytics UI
-├── model/
-│   └── artifacts/            # Exported TF-IDF & XGBoost joblib files
-├── notebooks/                # Jupyter notebook development pipeline
-│   ├── 01_eda.ipynb          # PDF extraction & synthetic data generation
-│   ├── 02_data_processing.ipynb # Text normalization & stratified splits
-│   └── 03_baseline_model.ipynb  # Model training & metrics evaluation
-├── .streamlit/               # Streamlit server & theme config
-├── requirements.txt          # Python project dependencies
-└── README.md
+|-- backend/
+|   |-- main.py                 # FastAPI application
+|   |-- models/
+|   |   |-- predictor.py        # Model inference service
+|   |   `-- schemas.py          # Request and response models
+|   `-- routers/
+|       `-- predict.py          # Prediction routes
+|-- frontend/
+|   `-- app.py                  # Streamlit dashboard
+|-- model/
+|   `-- artifacts/              # Saved model files
+|-- notebooks/                  # Exploratory and training notebooks
+|-- src/
+|   |-- model.py                # Model definitions
+|   `-- train.py                # Training pipeline
+|-- .streamlit/                 # Streamlit configuration
+|-- render.yaml                 # Render backend deployment configuration
+|-- requirements.txt
+`-- README.md
+```
 
-# 🇬🇧 AutoAudit-ML — MTD VAT Code Predictor for UK Bank Transactions
+## Installation
 
-> **Live Demo:** [Streamlit Cloud Deployment](https://autoaudit-ml-vat-predictor.streamlit.app/) &nbsp;|&nbsp; **Target Compliance:** MTD ITSA | UK Accounting Automation | April 2026 Deadline
+### Requirements
 
-An end-to-end machine learning system that automatically predicts the correct UK VAT code for bank transaction descriptions — addressing the cold-start accuracy gap (60–70% on first run) common in legacy accounting software rules.
+- Python 3.11 or newer
+- Git
 
-Trained on extracted UK bank statement descriptions and synthetic transaction variations grounded in HMRC VAT Notice 700, this system classifies transactions into five HMRC VAT categories with vectorized high-speed inference.
+### Setup
 
----
+```bash
+git clone https://github.com/esabha-coding/AutoAudit-ML-VAT-Code-Predictor.git
+cd AutoAudit-ML-VAT-Code-Predictor
 
-## 🛑 The Problem This Solves
+python -m venv venv
+```
 
-From April 2026, Making Tax Digital (MTD) for Income Tax Self Assessment (ITSA) becomes mandatory across the UK. Every transaction must be digitally recorded with the correct VAT treatment before quarterly submission to HMRC.
+Windows:
 
-While standard software handles general category assignments, VAT code assignment often remains a manual step requiring monthly correction. Static bank rules often achieve low accuracy on new accounts with no historical General Ledger mapping. **AutoAudit-ML directly automates this workflow.**
+```powershell
+.\venv\Scripts\activate
+```
 
----
+macOS or Linux:
 
-## 🏷️ HMRC VAT Classes
+```bash
+source venv/bin/activate
+```
 
-| Code | Description | Examples |
-|:---|:---|:---|
-| **Standard Rate (20%)** | Most taxable goods and services | Electronics, SaaS software, Retail, Takeaway food |
-| **Reduced Rate (5%)** | Domestic energy & specific goods | British Gas, E.ON Next, Domestic power |
-| **Zero Rated (0%)** | Essential cold food, books, public transport | Tesco groceries, Amazon Kindle, Trainline, TfL |
-| **Exempt** | Financial services, postal, insurance | Bank charges, Royal Mail postage, Insurance premiums |
-| **Outside Scope** | Non-VAT statutory & internal transfers | HMRC tax payments, Payroll transfers, Director drawings |
+Install dependencies:
 
----
+```bash
+pip install -r requirements.txt
+```
 
-## 📊 Model Performance Evaluation
+## Run the Streamlit Dashboard
 
-| Model Architecture | Macro F1 | Standard Rate F1 | Zero Rate F1 | Reduced F1 | Exempt F1 | Outside Scope F1 |
-|:---|:---|:---|:---|:---|:---|:---|
-| **TF-IDF + XGBoost Classifier** | **0.9994** | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+From the project root:
 
----
+```bash
+streamlit run frontend/app.py
+```
 
-## 🛠️ Tech Stack & Architecture
+The dashboard opens at `http://localhost:8501`.
 
-| Layer | Technology |
-|:---|:---|
-| **ML Pipeline** | XGBoost Classifier, Scikit-learn (TF-IDF Vectorizer), Pandas, NumPy, Joblib |
-| **Backend REST API** | FastAPI, Uvicorn, Pydantic V2 |
-| **Frontend Interface** | Streamlit, Plotly Express |
-| **PDF Ingestion** | pdfplumber |
-| **Serialization** | joblib |
-| **Deployment** | Streamlit Community Cloud + Render |
+## Run the FastAPI Service
 
----
+From the project root:
 
-## 🔌 API Reference
+```bash
+uvicorn backend.main:app --reload --port 8000
+```
 
-### `GET /health`
+The API opens at `http://localhost:8000`.
+
+Interactive API documentation is available at `http://localhost:8000/docs`.
+
+## API Reference
+
+### Health Check
+
+```http
+GET /health
+```
+
+Example response:
+
 ```json
 {
   "status": "healthy",
-  "model_loaded": true,
-  "active_model": "XGBoost + TF-IDF"
+  "model_loaded": true
 }
 ```
 
-### `POST /predict`
-**Request:**
+The detailed router health endpoint is also available at:
+
+```http
+GET /api/v1/health
+```
+
+### Single Prediction
+
+```http
+POST /api/v1/predict
+Content-Type: application/json
+```
+
+Request:
+
 ```json
 {
   "description": "TESCO STORES 3421",
   "amount": 4.50
 }
 ```
-**Response:**
+
+Response:
+
 ```json
 {
-  "vat_code": "zero_rated",
+  "description": "TESCO STORES 3421",
+  "predicted_vat_code": "zero_rated",
   "confidence": 0.94,
-  "label": "Zero Rated (0%)",
-  "explanation": "Transaction classified as Zero Rated because TESCO is associated with grocery retail. Cold food purchases are zero-rated under HMRC VAT Notice 700/14.",
-  "all_probabilities": {
+  "probabilities": {
     "standard_rate": 0.04,
     "reduced_rate": 0.01,
     "zero_rated": 0.94,
     "exempt": 0.00,
     "outside_scope": 0.01
-  }
+  },
+  "explanation": "Transaction classified as Zero Rated."
 }
 ```
 
-### `POST /predict/batch`
-Accepts CSV upload. Returns original CSV with `predicted_vat_code` and `confidence` columns appended — MTD-ready output for direct import into Xero or QuickBooks.
+### Batch Prediction
 
----
-
-## 🚀 Setup & Installation
-
-### Prerequisites
-- Python 3.11
-- Git
-
-### Local Development
-
-```bash
-# Clone the repository
-git clone https://github.com/esabha-coding/AutoAudit-ML-VAT-Code-Predictor.git
-cd AutoAudit-ML-VAT-Code-Predictor
-
-# Create and activate virtual environment
-python -m venv venv
-
-# Windows
-.\venv\Scripts\activate
-# macOS/Linux
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
+```http
+POST /api/v1/predict/batch
+Content-Type: application/json
 ```
 
-### Run Training Pipeline
+Request:
 
-```bash
-python src/train.py
+```json
+{
+  "transactions": [
+    "TESCO STORES 3421",
+    "BRITISH GAS",
+    "BARCLAYS BANK CHARGE"
+  ]
+}
 ```
 
-Reads `data/transactions.csv`, trains TF-IDF + XGBoost classifier, and saves artifacts to `model/artifacts/`.
+The response contains a `results` array with one prediction object per transaction.
 
-### Start Backend API
+## Model Performance
 
-```bash
-cd backend
-uvicorn main:app --reload --port 8000
+The current model evaluation reports a macro F1 score of `0.9994` on the project evaluation data. Performance can vary for ambiguous descriptions, unseen merchants, and transaction formats outside the UK bank statement data used for training.
+
+These results should be treated as a model benchmark, not a guarantee of tax correctness. Review low-confidence or ambiguous predictions before submitting VAT records.
+
+## Deployment
+
+### Streamlit Community Cloud
+
+- Repository: `esabha-coding/AutoAudit-ML-VAT-Code-Predictor`
+- Branch: `main`
+- Main file: `frontend/app.py`
+- Live URL: https://autoaudit-ml-vat-predictor.streamlit.app/
+
+Pushes to `main` trigger a Streamlit redeployment when the repository is connected to Streamlit Community Cloud.
+
+### Render Backend
+
+The backend deployment configuration is in `render.yaml`:
+
+```yaml
+startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 ```
 
-Interactive docs available at: `http://localhost:8000/docs`
+The backend can be deployed independently on Render. Set any public backend URL in the deployment environment when integrating an external client.
 
-### Launch Streamlit Frontend
+## Known Limitations
 
-```bash
-cd frontend
-streamlit run app.py
-```
+- The dashboard processes one CSV statement at a time.
+- The model predicts from transaction text and does not currently use the transaction amount as a model feature.
+- Ambiguous merchants may require manual review.
+- The model is trained primarily on UK bank statement descriptions.
+- The dashboard currently performs local inference from the saved artifacts; it does not require the FastAPI service for its main prediction flow.
 
-Dashboard available at: `http://localhost:8501`
+## Future Improvements
 
----
+- Amount-aware VAT classification
+- More bank-specific description normalization
+- Expanded validation data for minority VAT classes
+- Human review workflows for low-confidence predictions
+- Optional accounting-platform integrations
 
-## ☁️ Deployment
+## Author
 
-| Service | Platform | Configuration |
-|:---|:---|:---|
-| **Frontend** | Streamlit Community Cloud | Main file: `frontend/app.py` |
-| **Backend** | Render | Root: `backend/`, Start: `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+**Saba Ijaz** - AI Automation Builder and Executive Accountant
 
-**Environment variable on Streamlit Cloud:**
+## License
 
-| Key | Value |
-|:---|:---|
-| `BACKEND_URL` | `https://your-render-url.onrender.com` |
-
-Every `git push origin main` automatically redeploys both services.
-
----
-
-## 📚 Research Background
-
-This project addresses a documented gap in UK accounting automation:
-
-- Static bank rules in Xero/QuickBooks achieve **60–70% accuracy on first run** for new clients, improving to 95%+ only after 2–3 months of accumulated GL history *(Source: CodeIQ, 2026)*
-- QuickBooks published research in 2025 acknowledging that *"unique formatting of transaction descriptions, wide variety of transaction categories, and vast scale of data"* remain unsolved challenges in their production model
-- From **6 April 2026**, MTD ITSA becomes mandatory for 4+ million UK sole traders and landlords — creating urgent demand for automated VAT categorisation
-- Under **UK GDPR Article 22**, automated financial decisions must be explainable — this system surfaces confidence scores and reasoning for every prediction
-
----
-
-## ⚠️ Known Limitations
-
-- Ambiguous merchants (e.g. AMAZON — could be zero-rated books or standard-rated electronics) reduce confidence scores — these are automatically flagged for human review
-- Reduced Rate (5%) classification has the smallest training sample and highest error rate in minority-class scenarios
-- Model was trained primarily on UK bank statement formats — non-UK transaction descriptions may perform below benchmark
-- New unseen merchants fall back to the highest-frequency class with a low confidence score — surfaced clearly in the UI
-
----
-
-## 🔮 Future Improvements
-
-- DistilBERT fine-tuned model for semantic merchant understanding beyond keyword patterns
-- Amount-aware prediction (£3.50 at TESCO → zero-rated; £35.00 → likely mixed rate)
-- **Xero API write-back** — categorised transactions posted directly to chart of accounts via Xero API
-- Multi-bank description normalisation (Barclays, Monzo, Starling, HSBC all format differently)
-- SHAP token-level explainability layer for GDPR-compliant decision audit trail
-
----
-
-## 👤 Author
-
-**Saba Ijaz** — AI Automation Builder & Executive Accountant
-
-4 years of remote UK e-commerce accounting experience (Amazon UK/US, TikTok Shop, dropshipping/online arbitrage). Builds LLM agents, RAG pipelines, and ML systems that automate accounting and financial workflows.
-
-**Certifications:** Xero Advisor Certified &nbsp;|&nbsp; UK GAAP &nbsp;|&nbsp; Making Tax Digital &nbsp;|&nbsp; Amazon Seller Central
-
-[![GitHub](https://img.shields.io/badge/GitHub-esabha--coding-black?logo=github)](https://github.com/esabha-coding)
-
----
-
-## 📄 License
-
-MIT License — free to use, modify, and distribute with attribution.
+MIT License
