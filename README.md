@@ -251,6 +251,9 @@ The backend can be deployed independently on Render. Set any public backend URL 
 - Human review workflows for low-confidence predictions
 - Optional accounting-platform integrations
 
+## Video
+- https://drive.google.com/file/d/1Qit6dn9gftYrNBTF8416l4cWRMBK7qWZ/view?usp=sharing
+
 ## Author
 
 **Saba Ijaz** - AI Automation Builder and Executive Accountant
