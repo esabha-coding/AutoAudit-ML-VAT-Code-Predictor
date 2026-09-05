@@ -322,9 +322,14 @@ if page == "Single Transaction":
 elif page == "Batch Upload":
     render_section_title(
         "Batch VAT Audit",
-        "Upload a CSV file to classify multiple transactions and review trends, totals, and confidence scores."
+        "Upload one CSV statement at a time to classify its transactions and review trends, totals, and confidence scores."
     )
-    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+    uploaded_file = st.file_uploader(
+        "Upload one CSV statement",
+        type=["csv"],
+        accept_multiple_files=False,
+        help="Upload one bank statement CSV. Process another statement after completing this one.",
+    )
 
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
