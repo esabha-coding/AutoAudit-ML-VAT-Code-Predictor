@@ -165,6 +165,8 @@ Request:
 }
 ```
 
+`amount` is optional and currently accepted for compatibility; the model uses the transaction description for classification.
+
 Response:
 
 ```json
@@ -179,11 +181,13 @@ Response:
     "exempt": 0.00,
     "outside_scope": 0.01
   },
-  "explanation": "Transaction classified as Zero Rated."
+  "explanation": "Classified as 'zero_rated' with 94.0% confidence based on merchant transaction patterns."
 }
 ```
 
 ### Batch Prediction
+
+The API batch endpoint accepts a JSON array of transaction description strings. CSV upload and CSV result download are provided by the Streamlit dashboard, not by this endpoint.
 
 ```http
 POST /api/v1/predict/batch
